@@ -23,7 +23,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v4
         with:
-          images: pataar/efteling-node-exporter
+          images: ghcr.io/pataar/efteling-node-exporter
           tags: |
             type=ref,event=branch
             type=ref,event=pr

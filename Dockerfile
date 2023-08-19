@@ -44,7 +44,5 @@ RUN corepack enable && \
 
 COPY --from=builder /app/build build
 
-COPY version version
-
 # Do not run this through yarn / npm for correct SIG handling
 CMD ["node", "build/index.js"]
