@@ -1,0 +1,43 @@
+{
+  "name": "efteling-node-exporter",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "pnpm build --watch & nodemon --watch build --signal SIGTERM --exec \"pnpm start\"",
+    "start": "node build/index.js",
+    "lint": "eslint src/**/*.ts --fix",
+    "test": "eslint src/**/*.ts",
+    "format": "prettier .",
+    "test:watch": "pnpm jest --watch --notify --notifyMode=change --coverage"
+  },
+  "lint-staged": {
+    "src/**/*.ts": [
+      "eslint --fix"
+    ],
+    "*.{json,yml,md}": [
+      "prettier --write"
+    ]
+  },
+  "packageManager": "pnpm@8.6.12",
+  "devDependencies": {
+    "@codedependant/semantic-release-docker": "^4.4.0",
+    "@types/express": "^4.17.17",
+    "@typescript-eslint/eslint-plugin": "^6.4.0",
+    "@typescript-eslint/parser": "^6.4.0",
+    "eslint": "^8.47.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-prettier": "^5.0.0",
+    "husky": "^8.0.3",
+    "lint-staged": "^14.0.0",
+    "nodemon": "^3.0.1",
+    "prettier": "^3.0.2",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.1.6"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "prom-client": "^14.2.0"
+  }
+}
