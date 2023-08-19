@@ -14,7 +14,6 @@ RUN corepack enable && \
 ENV NODE_ENV production
 
 COPY tsconfig.json tsconfig.json
-COPY version version
 COPY src src
 
 RUN pnpm build
