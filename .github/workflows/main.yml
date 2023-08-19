@@ -1,6 +1,8 @@
 name: Publish Docker image
 on:
   push:
+    branches:
+      - main
     tags:
       - 'v*.*.*'
 jobs:
@@ -16,20 +18,28 @@ jobs:
         uses: docker/setup-qemu-action@v2
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
-
+      -
+        name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: pataar/efteling-node-exporter
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v2
         with:
           registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.CR_PAT }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Push to GitHub Packages
         uses: docker/build-push-action@v3
         with:
           context: .
-          cache-from: type=registry,ref=ghcr.io/pataar/efteling-node-exporter:latest
-          cache-to: type=inline
-          tags: ghcr.io/pataar/efteling-node-exporter:latest,ghcr.io/pataar/efteling-node-exporter:${{ env.RELEASE_VERSION }}
-          #platforms: linux/arm/v7,linux/amd64
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           platforms: linux/amd64
           push: true
