@@ -1,4 +1,4 @@
-import { ApiResponse } from "./types/efteling";
+import { ApiResponse, Type } from "./types/efteling";
 import PromClient, { Gauge, Registry } from "prom-client";
 
 const gauges = new Map<string, Gauge>();
@@ -8,12 +8,10 @@ export function convertResponseToMetrics(registry: Registry, response: ApiRespon
 }
 
 function waitingTimeMetric(registry: Registry, response: ApiResponse) {
-	const waitingTime = response.AttractionInfo.filter(attraction => typeof attraction.WaitingTime !== "undefined").map(
-		attraction => ({
-			...attraction,
-			WaitingTime: attraction.WaitingTime as number,
-		}),
-	);
+	const waitingTime = response.AttractionInfo.filter(attr => attr.Type === Type.Attracties).map(attraction => ({
+		...attraction,
+		WaitingTime: attraction.WaitingTime as number,
+	}));
 
 	if (!gauges.get("efteling_waiting_time")) {
 		let newGauge;
@@ -32,10 +30,14 @@ function waitingTimeMetric(registry: Registry, response: ApiResponse) {
 	const gauge = gauges.get("efteling_waiting_time");
 
 	waitingTime.forEach(attraction => {
-		console.log("Setting gauge", attraction.Name, attraction.WaitingTime);
-		gauge?.set(
-			{ id: attraction.Id, name: attraction.Name, empire: attraction.Empire, type: attraction.Type },
-			attraction.WaitingTime,
-		);
+		if (typeof attraction.WaitingTime !== "undefined") {
+			console.log("Setting gauge", attraction.Name, attraction.WaitingTime);
+			gauge?.set(
+				{ id: attraction.Id, name: attraction.Name, empire: attraction.Empire, type: attraction.Type },
+				attraction.WaitingTime,
+			);
+		} else {
+			gauge?.remove({ id: attraction.Id, name: attraction.Name, empire: attraction.Empire, type: attraction.Type });
+		}
 	});
 }
