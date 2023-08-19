@@ -22,7 +22,7 @@ function waitingTimeMetric(registry: Registry, response: ApiResponse) {
 			(newGauge = new PromClient.Gauge({
 				name: "efteling_waiting_time",
 				help: "Waiting time for attractions",
-				labelNames: ["name", "empire", "type"],
+				labelNames: ["id", "name", "empire", "type"],
 			})),
 		);
 
@@ -33,6 +33,9 @@ function waitingTimeMetric(registry: Registry, response: ApiResponse) {
 
 	waitingTime.forEach(attraction => {
 		console.log("Setting gauge", attraction.Name, attraction.WaitingTime);
-		gauge?.set({ name: attraction.Name, empire: attraction.Empire, type: attraction.Type }, attraction.WaitingTime);
+		gauge?.set(
+			{ id: attraction.Id, name: attraction.Name, empire: attraction.Empire, type: attraction.Type },
+			attraction.WaitingTime,
+		);
 	});
 }

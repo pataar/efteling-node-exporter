@@ -58,6 +58,7 @@ export enum State {
 	Buitenbedrijf = "buitenbedrijf",
 	Gesloten = "gesloten",
 	Open = "open",
+	Unknown = "",
 }
 
 export enum Type {
