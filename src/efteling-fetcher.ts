@@ -1,4 +1,4 @@
-import { ApiResponse } from "../types/efteling";
+import { ApiResponse } from "./types/efteling";
 
 export async function fetchAll(): Promise<ApiResponse> {
 	const apiUrl = "https://api.efteling.com/app/wis";

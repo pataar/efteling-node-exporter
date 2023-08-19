@@ -1,4 +1,4 @@
-import { ApiResponse } from "../types/efteling";
+import { ApiResponse } from "./types/efteling";
 import PromClient, { Gauge, Registry } from "prom-client";
 
 const gauges = new Map<string, Gauge>();

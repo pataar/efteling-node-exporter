@@ -23,9 +23,6 @@ FROM node:20-alpine@sha256:f62abc08fe1004555c4f28b6793af8345a76230b21d2d249976f3
 
 RUN apk add --no-cache git bash
 
-RUN git config --global user.email bot@interactivestudios.nl && \
-    git config --global user.name bot
-
 ENV DATABASE_PATH ${DATABASE_PATH:-database}
 ENV NODE_ENV production
 
