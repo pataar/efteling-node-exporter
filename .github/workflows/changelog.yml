@@ -30,3 +30,4 @@ jobs:
         with:
           commit_message: "chore(changelog): update changelog [skip ci]"
           file_pattern: CHANGELOG.md
+          branch: main
