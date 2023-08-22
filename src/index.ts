@@ -8,10 +8,15 @@ const registry = new Registry();
 const app = express();
 
 app.get("/metrics", async (req, res) => {
-	convertResponseToMetrics(registry, await fetchAll());
+	try {
+		convertResponseToMetrics(registry, await fetchAll());
 
-	res.set("Content-Type", registry.contentType);
-	res.end(await registry.metrics());
+		res.set("Content-Type", registry.contentType);
+		res.end(await registry.metrics());
+	} catch (e) {
+		console.error(e);
+		res.sendStatus(500);
+	}
 });
 
 app.listen(1337, () => {
