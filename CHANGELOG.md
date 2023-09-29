@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.0.3] - 2023-09-29
+
+### Bug Fixes
+
+- Add error handling
+
+### Miscellaneous Tasks
+
+- Update changelog [skip ci]
+
+### Build
+
+- Move to bun
+
 ## [0.0.1] - 2023-08-19
 
 ### Miscellaneous Tasks
