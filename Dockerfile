@@ -7,7 +7,7 @@ WORKDIR /app
 COPY bun.lockb bun.lockb
 COPY package.json package.json
 
-RUN bun install
+RUN bun install -p
 
 ENV NODE_ENV production
 
