@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.0.5] - 2023-12-10
+
+### Features
+
+- Remove express
+- Reduce docker size
+
+### Miscellaneous Tasks
+
+- Update changelog [skip ci]
+
 ## [0.0.3] - 2023-09-29
 
 ### Bug Fixes
