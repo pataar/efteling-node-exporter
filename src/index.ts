@@ -1,24 +1,27 @@
-import express from "express";
 import { fetchAll } from "./efteling-fetcher";
 import { convertResponseToMetrics } from "./metric-generator";
 import { Registry } from "prom-client";
 
 const registry = new Registry();
 
-const app = express();
+console.log("Starting server...");
 
-app.get("/metrics", async (req, res) => {
-	try {
-		convertResponseToMetrics(registry, await fetchAll());
+Bun.serve({
+	port: 1337,
+	async fetch(req) {
+		const url = new URL(req.url);
 
-		res.set("Content-Type", registry.contentType);
-		res.end(await registry.metrics());
-	} catch (e) {
-		console.error(e);
-		res.sendStatus(500);
-	}
-});
+		if (url.pathname === "/metrics") {
+			convertResponseToMetrics(registry, await fetchAll());
+			return new Response(await registry.metrics(), {
+				headers: {
+					"Content-Type": registry.contentType,
+				},
+			});
+		}
 
-app.listen(1337, () => {
-	console.log(`⚡️[server]: Server is running at http://localhost:1337`);
+		return new Response("404", {
+			status: 404,
+		});
+	},
 });

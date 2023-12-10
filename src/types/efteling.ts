@@ -5,7 +5,6 @@ export interface ApiResponse {
 	OpeningHours: OpeningHours;
 	Event: Event;
 	AttractionInfo: AttractionInfo[];
-	MaintenanceInfo: any[];
 }
 
 export interface AttractionInfo {
