@@ -13,13 +13,12 @@ struct Attraction {
 
 #[allow(non_snake_case)]
 #[derive(Debug, Deserialize)]
-struct Response {
+struct EftelingResponse {
     AttractionInfo: Vec<Attraction>,
 }
 
 #[tokio::main]
 async fn main() {
-    fetch_metrics().await;
     // build our application with a single route
     let app = Router::new().route("/metrics", get(fetch_metrics));
 
@@ -30,17 +29,23 @@ async fn main() {
     axum::serve(listener, app).await.unwrap();
 }
 
-async fn fetch_metrics() -> (StatusCode, String) {
+async fn fetch_metrics() -> Result<(StatusCode, String), StatusCode> {
     let url = "https://api.efteling.com/app/wis";
-    let response = reqwest::get(url).await.unwrap();
+    let response = reqwest::get(url).await.map_err(|err| {
+        eprintln!("Error fetching metrics: {:?}", err);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
 
-    let jso: Response = response.json().await.unwrap();
+    let json: EftelingResponse = response.json().await.map_err(|err| {
+        eprintln!("Error parsing JSON: {:?}", err);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
 
-    let mut response = String::from(
+    let mut response = format!(
         "# HELP efteling_waiting_time Waiting time for attractions\n# TYPE efteling_waiting_time gauge\n",
     );
 
-    for attraction in jso.AttractionInfo {
+    for attraction in json.AttractionInfo {
         if let Some(waiting_time) = attraction.WaitingTime {
             response.push_str(&format!(
                 "efteling_waiting_time{{id=\"{}\", name=\"{}\", empire=\"{}\", type=\"{}\"}} {}\n",
@@ -49,5 +54,5 @@ async fn fetch_metrics() -> (StatusCode, String) {
         }
     }
 
-    (StatusCode::OK, response)
+    Ok((StatusCode::OK, response))
 }
