@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.1] - 2024-01-05
+
+### Miscellaneous Tasks
+
+- Update changelog [skip ci]
+
+### Testing
+
+- Add tests
+
+### Build
+
+- Disable build on branch
+
 ## [0.1.0] - 2024-01-05
 
 ### Miscellaneous Tasks
