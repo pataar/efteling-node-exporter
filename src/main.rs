@@ -41,6 +41,10 @@ async fn fetch_metrics() -> Result<(StatusCode, String), StatusCode> {
         StatusCode::INTERNAL_SERVER_ERROR
     })?;
 
+    process_metrics(json)
+}
+
+fn process_metrics(json: EftelingResponse) -> Result<(StatusCode, String), StatusCode> {
     let mut response = format!(
         "# HELP efteling_waiting_time Waiting time for attractions\n# TYPE efteling_waiting_time gauge\n",
     );
@@ -55,4 +59,38 @@ async fn fetch_metrics() -> Result<(StatusCode, String), StatusCode> {
     }
 
     Ok((StatusCode::OK, response))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_process_metrics() {
+        let data = EftelingResponse {
+            AttractionInfo: vec![
+                Attraction {
+                    Id: "1".to_string(),
+                    Name: "Attraction 1".to_string(),
+                    WaitingTime: Some(10),
+                    Empire: "Empire 1".to_string(),
+                    r#Type: "Type 1".to_string(),
+                },
+                Attraction {
+                    Id: "2".to_string(),
+                    Name: "Attraction 2".to_string(),
+                    WaitingTime: None,
+                    Empire: "Empire 2".to_string(),
+                    r#Type: "Type 2".to_string(),
+                },
+            ],
+        };
+
+        let expected = (
+            StatusCode::OK,
+            "# HELP efteling_waiting_time Waiting time for attractions\n# TYPE efteling_waiting_time gauge\nefteling_waiting_time{id=\"1\", name=\"Attraction 1\", empire=\"Empire 1\", type=\"Type 1\"} 10\n".to_string(),
+        );
+
+        assert_eq!(process_metrics(data).unwrap(), expected);
+    }
 }
