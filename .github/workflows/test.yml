@@ -9,19 +9,10 @@ on:
       - main
 
 jobs:
-  build:
+  test:
+    name: cargo test
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: Set up Rust
-        uses: actions/setup-rust@v1
-        with:
-          rust-version: stable
-
-      - name: Build and test
-        run: |
-          cargo build --verbose
-          cargo test --verbose
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo test --all-features
