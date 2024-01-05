@@ -1,17 +1,21 @@
-FROM oven/bun:1.0
+FROM rust:1.75 as builder
 
-ENV TZ Europe/Amsterdam
+WORKDIR /efteling-node-exporter
+RUN cargo new --bin efteling-node-exporter
 
-WORKDIR /app
+COPY Cargo.lock Cargo.lock
+COPY Cargo.toml Cargo.toml
 
-COPY bun.lockb bun.lockb
-COPY package.json package.json
-
-RUN bun install -p
-
-ENV NODE_ENV production
-
-COPY tsconfig.json tsconfig.json
 COPY src src
+RUN cargo build --release
 
-CMD [ "bun", "start" ]
+
+FROM debian:bookworm-slim AS app
+
+RUN apt-get update && apt install -y openssl ca-certificates
+
+RUN update-ca-certificates
+
+COPY --from=builder /efteling-node-exporter/target/release/efteling-node-exporter /efteling-node-exporter
+
+CMD ["/efteling-node-exporter"]

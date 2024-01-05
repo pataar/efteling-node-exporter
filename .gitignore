@@ -6,3 +6,8 @@
 /repositories/
 .pnp.*
 
+
+
+# Added by cargo
+
+/target
