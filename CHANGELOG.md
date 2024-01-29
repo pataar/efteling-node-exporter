@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.3] - 2024-01-29
+
+### Miscellaneous Tasks
+
+- Bump axum from 0.7.3 to 0.7.4
+- Bump docker/setup-buildx-action from 2 to 3
+- Bump docker/metadata-action from 4 to 5
+- Bump serde from 1.0.194 to 1.0.196
+- Bump actions/checkout from 3 to 4
+- Bump docker/build-push-action from 3 to 5
+- Bump docker/login-action from 2 to 3
+- Update changelog [skip ci]
+
 ## [0.1.2] - 2024-01-29
 
 ### Miscellaneous Tasks
