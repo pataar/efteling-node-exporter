@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.2] - 2024-01-29
+
+### Miscellaneous Tasks
+
+- Update changelog [skip ci]
+- Bump h2 from 0.3.22 to 0.3.24
+
 ## [0.1.1] - 2024-01-05
 
 ### Miscellaneous Tasks
