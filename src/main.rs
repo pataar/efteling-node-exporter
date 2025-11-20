@@ -18,15 +18,16 @@ struct EftelingResponse {
 }
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // build our application with a single route
     let app = Router::new().route("/metrics", get(fetch_metrics));
 
     println!("Listening on 1337");
 
     // run our app with hyper, listening globally on port 1337
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:1337").await.unwrap();
-    axum::serve(listener, app).await.unwrap();
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:1337").await?;
+    axum::serve(listener, app).await?;
+    Ok(())
 }
 
 async fn fetch_metrics() -> Result<(StatusCode, String), StatusCode> {
@@ -91,6 +92,6 @@ mod tests {
             "# HELP efteling_waiting_time Waiting time for attractions\n# TYPE efteling_waiting_time gauge\nefteling_waiting_time{id=\"1\", name=\"Attraction 1\", empire=\"Empire 1\", type=\"Type 1\"} 10\n".to_string(),
         );
 
-        assert_eq!(process_metrics(data).unwrap(), expected);
+        assert_eq!(process_metrics(data).expect("process_metrics should succeed"), expected);
     }
 }
