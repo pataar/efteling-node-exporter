@@ -20,7 +20,7 @@ updates:
       # Separate group for major framework updates
       rust-major:
         update-types:
-          - "version-update:semver-major"
+          - "major"
 
   # GitHub Actions
   - package-ecosystem: "github-actions"
