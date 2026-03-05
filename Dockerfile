@@ -1,4 +1,4 @@
-FROM rust:1.91 as builder
+FROM rust:1.93 as builder
 
 WORKDIR /efteling-node-exporter
 RUN cargo new --bin efteling-node-exporter
