@@ -1,3 +1,35 @@
+## [0.1.6] - 2026-04-24
+
+### 🚀 Features
+
+- Add caching, structured logging and performance improvements
+
+### 🐛 Bug Fixes
+
+- Correct update-types syntax in Dependabot config
+
+### 💼 Other
+
+- *(deps)* Bump actions/checkout from 5 to 6
+- *(deps)* Bump tracing-subscriber from 0.3.20 to 0.3.22
+- *(deps)* Bump tracing from 0.1.41 to 0.1.43
+- *(deps)* Bump tokio from 1.48.0 to 1.49.0 (#118)
+- *(deps)* Bump axum from 0.8.7 to 0.8.8 (#113)
+- *(deps)* Bump tracing from 0.1.43 to 0.1.44 (#114)
+- *(deps)* Bump reqwest from 0.12.24 to 0.13.1 (#117)
+- *(deps)* Bump reqwest from 0.13.1 to 0.13.2 (#120)
+- *(deps)* Bump bytes from 1.11.0 to 1.11.1 (#119)
+- *(deps)* Bump aws-lc-sys in the cargo group across 1 directory (#122)
+
+### ⚙️ Miscellaneous Tasks
+
+- *(changelog)* Update changelog [skip ci]
+- *(docker)* Bump rust from 1.91 to 1.93 (#124)
+- *(ci)* Bump the github-actions group with 3 updates (#126)
+- *(ci)* Bump the github-actions group with 2 updates (#127)
+- *(docker)* Bump rust from 1.93 to 1.94 (#128)
+- *(docker)* Bump rust from 1.94 to 1.95 (#135)
+- Update rust dependencies (#139)
 ## [0.1.5] - 2025-11-20
 
 ### 🐛 Bug Fixes
