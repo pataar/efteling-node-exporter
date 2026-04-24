@@ -6,6 +6,8 @@ on:
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
+permissions:
+  contents: write
 jobs:
   update_changelog:
     name: Update the changelog based on the latest commits
