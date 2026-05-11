@@ -9,6 +9,6 @@ edition = "2021"
 axum = "0.8.9"
 reqwest = { version = "0.13.3", features = ["blocking", "json"] }
 serde = { version = "1.0.228", features = ["derive"] }
-tokio = { version = "1.52.1", features = ["macros", "rt-multi-thread", "time", "sync"] }
+tokio = { version = "1.52.3", features = ["macros", "rt-multi-thread", "time", "sync"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
