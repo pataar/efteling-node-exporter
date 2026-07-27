@@ -118,9 +118,9 @@ fn process_metrics(json: EftelingResponse) -> Result<(StatusCode, String), Statu
 
     for attraction in json.AttractionInfo {
         if let Some(waiting_time) = attraction.WaitingTime {
-            write!(
+            writeln!(
                 response,
-                "efteling_waiting_time{{id=\"{}\", name=\"{}\", empire=\"{}\", type=\"{}\"}} {}\n",
+                "efteling_waiting_time{{id=\"{}\", name=\"{}\", empire=\"{}\", type=\"{}\"}} {}",
                 escape_label_value(&attraction.Id),
                 escape_label_value(&attraction.Name),
                 escape_label_value(&attraction.Empire),
