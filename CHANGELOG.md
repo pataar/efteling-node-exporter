@@ -1,3 +1,11 @@
+## [0.1.7] - 2026-07-27
+
+### ⚙️ Miscellaneous Tasks
+
+- *(changelog)* Update changelog [skip ci]
+- *(docker)* Bump rust from 1.95 to 1.96 (#143)
+- *(ci)* Bump actions/checkout from 6 to 7 in the github-actions group (#144)
+- *(docker)* Bump rust from 1.96 to 1.97 (#145)
 ## [0.1.6] - 2026-04-24
 
 ### 🚀 Features
