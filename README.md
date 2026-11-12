@@ -34,7 +34,7 @@ docker run -p 1337:1337 ghcr.io/pataar/efteling-node-exporter
 
 ### From source
 
-Requires a recent Rust toolchain (see [`mise.toml`](./mise.toml)).
+Requires Rust 1.100 or newer. The exact toolchain is pinned in [`rust-toolchain.toml`](./rust-toolchain.toml), so `rustup` installs it on first use.
 
 ```sh
 cargo run
@@ -60,7 +60,11 @@ scrape_configs:
 ## Development
 
 ```sh
-cargo test    # run tests
-cargo clippy  # lint
-cargo fmt     # format
+cargo test                  # run tests
+cargo clippy --all-targets  # lint (clippy pedantic + Cargo lints, see [lints] in Cargo.toml)
+cargo fmt                   # format
 ```
+
+CI runs with `CARGO_BUILD_WARNINGS=deny`, so any rustc, clippy or Cargo lint warning (e.g. `cargo::unused_dependencies`) fails the build. Set the same variable locally to reproduce.
+
+New dependency versions are only picked up after they have been on crates.io for 7 days (`global-min-publish-age` in [`.cargo/config.toml`](./.cargo/config.toml); Dependabot uses the same cooldown).

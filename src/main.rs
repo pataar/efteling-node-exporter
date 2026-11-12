@@ -1,43 +1,58 @@
-use axum::{extract::State, http::StatusCode, routing::get, Router};
-use serde::Deserialize;
-use std::fmt::Write;
+use std::fmt::NumBuffer;
 use std::sync::Arc;
+
+use axum::{
+    Router,
+    body::Bytes,
+    extract::State,
+    http::{StatusCode, header},
+    response::{IntoResponse, Response},
+    routing::get,
+};
+use serde::Deserialize;
 use tokio::sync::RwLock;
 use tokio::time::{Duration, Instant};
 use tracing::{error, info};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-#[allow(non_snake_case)]
+const API_URL: &str = "https://api.efteling.com/app/wis";
+const LISTEN_ADDR: &str = "0.0.0.0:1337";
+const CACHE_TTL: Duration = Duration::from_secs(30);
+/// Content type of the Prometheus text exposition format.
+const METRICS_CONTENT_TYPE: &str = "text/plain; version=0.0.4; charset=utf-8";
+
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "PascalCase")]
 struct Attraction {
-    Id: String,
-    Name: String,
-    WaitingTime: Option<i16>,
-    Empire: String,
-    r#Type: String,
+    id: String,
+    name: String,
+    waiting_time: Option<i16>,
+    empire: String,
+    #[serde(rename = "Type")]
+    kind: String,
 }
 
-#[allow(non_snake_case)]
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "PascalCase")]
 struct EftelingResponse {
-    AttractionInfo: Vec<Attraction>,
+    attraction_info: Vec<Attraction>,
 }
 
+#[derive(Debug)]
 struct CachedResponse {
-    data: String,
+    /// Rendered metrics; `Bytes` makes serving a cache hit a refcount bump instead of a copy.
+    body: Bytes,
     timestamp: Instant,
 }
 
+#[derive(Debug)]
 struct AppState {
     client: reqwest::Client,
     cache: RwLock<Option<CachedResponse>>,
 }
 
-const CACHE_TTL: Duration = Duration::from_secs(30);
-
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Initialize tracing subscriber
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env()
@@ -46,124 +61,150 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
-    // Create shared state with HTTP client and cache
     let state = Arc::new(AppState {
         client: reqwest::Client::new(),
         cache: RwLock::new(None),
     });
 
-    // build our application with routes supporting both /metrics and /metrics/
+    // Support both /metrics and /metrics/
     let app = Router::new()
         .route("/metrics", get(fetch_metrics))
         .route("/metrics/", get(fetch_metrics))
         .with_state(state);
 
-    info!("Listening on 0.0.0.0:1337");
-
-    // run our app with hyper, listening globally on port 1337
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:1337").await?;
+    let listener = tokio::net::TcpListener::bind(LISTEN_ADDR).await?;
+    info!("Listening on {LISTEN_ADDR}");
     axum::serve(listener, app).await?;
     Ok(())
 }
 
-async fn fetch_metrics(
-    State(state): State<Arc<AppState>>,
-) -> Result<(StatusCode, String), StatusCode> {
-    // Check cache first
+async fn fetch_metrics(State(state): State<Arc<AppState>>) -> Result<Response, StatusCode> {
+    if let Some(cached) = state.cache.read().await.as_ref()
+        && cached.timestamp.elapsed() < CACHE_TTL
     {
-        let cache = state.cache.read().await;
-        if let Some(cached) = cache.as_ref() {
-            if cached.timestamp.elapsed() < CACHE_TTL {
-                return Ok((StatusCode::OK, cached.data.clone()));
-            }
-        }
+        return Ok(metrics_response(cached.body.clone()));
     }
 
-    // Fetch from API using shared client
-    let url = "https://api.efteling.com/app/wis";
-    let response = state.client.get(url).send().await.map_err(|err| {
-        error!("Error fetching metrics: {:?}", err);
-        StatusCode::INTERNAL_SERVER_ERROR
-    })?;
+    let json: EftelingResponse = state
+        .client
+        .get(API_URL)
+        .send()
+        .await
+        .and_then(reqwest::Response::error_for_status)
+        .map_err(|err| {
+            error!("Error fetching metrics: {err:?}");
+            StatusCode::BAD_GATEWAY
+        })?
+        .json()
+        .await
+        .map_err(|err| {
+            error!("Error parsing JSON: {err:?}");
+            StatusCode::BAD_GATEWAY
+        })?;
 
-    let json: EftelingResponse = response.json().await.map_err(|err| {
-        error!("Error parsing JSON: {:?}", err);
-        StatusCode::INTERNAL_SERVER_ERROR
-    })?;
+    let body = Bytes::from(render_metrics(&json));
 
-    let metrics = process_metrics(json)?;
+    *state.cache.write().await = Some(CachedResponse {
+        body: body.clone(),
+        timestamp: Instant::now(),
+    });
 
-    // Update cache
-    {
-        let mut cache = state.cache.write().await;
-        *cache = Some(CachedResponse {
-            data: metrics.1.clone(),
-            timestamp: Instant::now(),
-        });
-    }
-
-    Ok(metrics)
+    Ok(metrics_response(body))
 }
 
-fn escape_label_value(value: &str) -> String {
-    value
-        .replace('\\', "\\\\")
-        .replace('\"', "\\\"")
-        .replace('\n', "\\n")
+fn metrics_response(body: Bytes) -> Response {
+    ([(header::CONTENT_TYPE, METRICS_CONTENT_TYPE)], body).into_response()
 }
 
-fn process_metrics(json: EftelingResponse) -> Result<(StatusCode, String), StatusCode> {
-    let mut response = String::with_capacity(4096);
-    response.push_str("# HELP efteling_waiting_time Waiting time for attractions\n# TYPE efteling_waiting_time gauge\n");
-
-    for attraction in json.AttractionInfo {
-        if let Some(waiting_time) = attraction.WaitingTime {
-            writeln!(
-                response,
-                "efteling_waiting_time{{id=\"{}\", name=\"{}\", empire=\"{}\", type=\"{}\"}} {}",
-                escape_label_value(&attraction.Id),
-                escape_label_value(&attraction.Name),
-                escape_label_value(&attraction.Empire),
-                escape_label_value(&attraction.r#Type),
-                waiting_time
-            )
-            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+/// Appends `value` to `out`, escaped as a Prometheus label value.
+fn push_label_value(out: &mut String, value: &str) {
+    for c in value.chars() {
+        match c {
+            '\\' => out.push_str(r"\\"),
+            '"' => out.push_str(r#"\""#),
+            '\n' => out.push_str(r"\n"),
+            c => out.push(c),
         }
     }
+}
 
-    Ok((StatusCode::OK, response))
+fn render_metrics(json: &EftelingResponse) -> String {
+    let mut out = String::with_capacity(4096);
+    out.push_str(
+        "# HELP efteling_waiting_time Waiting time for attractions\n\
+         # TYPE efteling_waiting_time gauge\n",
+    );
+
+    let mut num = NumBuffer::new();
+    for attraction in &json.attraction_info {
+        let Some(waiting_time) = attraction.waiting_time else {
+            continue;
+        };
+        out.push_str("efteling_waiting_time{id=\"");
+        push_label_value(&mut out, &attraction.id);
+        out.push_str("\", name=\"");
+        push_label_value(&mut out, &attraction.name);
+        out.push_str("\", empire=\"");
+        push_label_value(&mut out, &attraction.empire);
+        out.push_str("\", type=\"");
+        push_label_value(&mut out, &attraction.kind);
+        out.push_str("\"} ");
+        out.push_str(waiting_time.format_into(&mut num));
+        out.push('\n');
+    }
+
+    out
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
+    fn attraction(id: &str, name: &str, waiting_time: Option<i16>) -> Attraction {
+        Attraction {
+            id: id.to_owned(),
+            name: name.to_owned(),
+            waiting_time,
+            empire: format!("Empire {id}"),
+            kind: format!("Type {id}"),
+        }
+    }
+
     #[test]
-    fn test_process_metrics() {
+    fn renders_attractions_with_waiting_time() {
         let data = EftelingResponse {
-            AttractionInfo: vec![
-                Attraction {
-                    Id: "1".to_string(),
-                    Name: "Attraction 1".to_string(),
-                    WaitingTime: Some(10),
-                    Empire: "Empire 1".to_string(),
-                    r#Type: "Type 1".to_string(),
-                },
-                Attraction {
-                    Id: "2".to_string(),
-                    Name: "Attraction 2".to_string(),
-                    WaitingTime: None,
-                    Empire: "Empire 2".to_string(),
-                    r#Type: "Type 2".to_string(),
-                },
+            attraction_info: vec![
+                attraction("1", "Attraction 1", Some(10)),
+                attraction("2", "Attraction 2", None),
             ],
         };
 
-        let expected = (
-            StatusCode::OK,
-            "# HELP efteling_waiting_time Waiting time for attractions\n# TYPE efteling_waiting_time gauge\nefteling_waiting_time{id=\"1\", name=\"Attraction 1\", empire=\"Empire 1\", type=\"Type 1\"} 10\n".to_string(),
+        assert_eq!(
+            render_metrics(&data),
+            "# HELP efteling_waiting_time Waiting time for attractions\n\
+             # TYPE efteling_waiting_time gauge\n\
+             efteling_waiting_time{id=\"1\", name=\"Attraction 1\", empire=\"Empire 1\", type=\"Type 1\"} 10\n"
         );
+    }
 
-        assert_eq!(process_metrics(data).expect("process_metrics should succeed"), expected);
+    #[test]
+    fn escapes_label_values() {
+        let data = EftelingResponse {
+            attraction_info: vec![attraction("3", "Back\\slash \"quoted\"\nnewline", Some(-1))],
+        };
+
+        assert!(render_metrics(&data).ends_with(
+            "name=\"Back\\\\slash \\\"quoted\\\"\\nnewline\", empire=\"Empire 3\", type=\"Type 3\"} -1\n"
+        ));
+    }
+
+    #[test]
+    fn deserializes_api_payload() {
+        let json = r#"{"AttractionInfo":[{"Id":"baron","Name":"Baron 1898","WaitingTime":25,"Empire":"Ruigrijk","Type":"Attraction","Extra":true}]}"#;
+        let parsed: EftelingResponse = serde_json::from_str(json).unwrap();
+        let first = &parsed.attraction_info[0];
+        assert_eq!(first.id, "baron");
+        assert_eq!(first.waiting_time, Some(25));
+        assert_eq!(first.kind, "Attraction");
     }
 }
