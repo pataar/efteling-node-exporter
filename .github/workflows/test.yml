@@ -1,4 +1,4 @@
-name: Rust Test
+name: Rust
 
 on:
   push:
@@ -11,11 +11,33 @@ on:
 permissions:
   contents: read
 
+env:
+  CARGO_TERM_COLOR: always
+  # Turn every rustc, clippy and Cargo lint warning into an error.
+  CARGO_BUILD_WARNINGS: deny
+
 jobs:
+  fmt:
+    name: cargo fmt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      # Installs the toolchain pinned in rust-toolchain.toml
+      - run: rustup toolchain install
+      - run: cargo fmt --all --check
+
+  clippy:
+    name: cargo clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: rustup toolchain install
+      - run: cargo clippy --all-targets --all-features --locked
+
   test:
     name: cargo test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@stable
-      - run: cargo test --all-features
+      - run: rustup toolchain install
+      - run: cargo test --all-features --locked

@@ -1,4 +1,4 @@
-FROM rust:1.99 as builder
+FROM rust:1.100 AS builder
 
 WORKDIR /efteling-node-exporter
 RUN cargo new --bin efteling-node-exporter
@@ -7,7 +7,7 @@ COPY Cargo.lock Cargo.lock
 COPY Cargo.toml Cargo.toml
 
 COPY src src
-RUN cargo build --release
+RUN cargo build --release --locked
 
 
 FROM debian:bookworm-slim AS app

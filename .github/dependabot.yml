@@ -8,6 +8,9 @@ updates:
       day: "monday"
       time: "06:00"
     open-pull-requests-limit: 5
+    # Matches `global-min-publish-age` in .cargo/config.toml
+    cooldown:
+      default-days: 7
     commit-message:
       prefix: "chore(deps)"
     groups:
@@ -21,6 +24,16 @@ updates:
       rust-major:
         update-types:
           - "major"
+
+  # Rust toolchain pinned in rust-toolchain.toml
+  - package-ecosystem: "rust-toolchain"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+    commit-message:
+      prefix: "chore(toolchain)"
 
   # GitHub Actions
   - package-ecosystem: "github-actions"
